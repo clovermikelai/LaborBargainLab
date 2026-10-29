@@ -48,7 +48,7 @@ st.markdown("""
 
 # Sidebar Information
 with st.sidebar:
-    st.image("https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=300&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=300&q=80", width=250)
     st.markdown("### ⚖️ LaborBargainLab")
     st.markdown("**2026 台灣美光罷工協商模擬器**")
     st.caption("四大角色沙盤推演 × 財務黑箱破解 × 勞動法理合規")
@@ -80,7 +80,7 @@ with tabs[0]:
 
     col_btn1, col_btn2 = st.columns([1, 4])
     with col_btn1:
-        start_sim = st.button("🚀 啟動 4 回合全自動推演", type="primary", use_container_width=True)
+        start_sim = st.button("🚀 啟動 4 回合全自動推演", type="primary")
 
     if start_sim or "sim_logs" in st.session_state:
         if start_sim:
@@ -179,7 +179,7 @@ with tabs[1]:
             y="發放金額 (元)",
             color="方案類型"
         ).properties(height=260)
-        st.altair_chart(c, use_container_width=True)
+        st.altair_chart(c)
 
         st.warning(f"🔍 財務邏輯破綻診斷：\n{mgmt_res['deception_analysis']}")
 
