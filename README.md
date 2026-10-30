@@ -3,9 +3,12 @@
 > **A Multi-Agent Strike Negotiation Simulator & Labor Decision Support System**  
 > *四代理人沙盤推演 × 財務黑箱破解 × 勞動法理合規裁判*
 
+[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success.svg)](https://clovermikelai.github.io/LaborBargainLab/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit App](https://img.shields.io/badge/Streamlit-Interactive%20UI-FF4B4B.svg)](https://streamlit.io/)
+
+### 🌐 線上立即操作（免安裝，手機/電腦瀏覽器直接開）：
+👉 **https://clovermikelai.github.io/LaborBargainLab/**
 
 ---
 
