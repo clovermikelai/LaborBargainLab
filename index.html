@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaborBargainLab 罷工談判協商模擬器 | 2026 美光勞資風暴決策支援</title>
+  
+  <meta name="theme-color" content="#1e293b">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Noto Sans TC', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .bubble-labor { border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.08); }
+    .bubble-mgmt { border-left: 4px solid #3b82f6; background: rgba(59, 130, 246, 0.08); }
+    .bubble-legal { border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.08); }
+    .bubble-med { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.08); }
+    /* custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="glass-card sticky top-0 z-50 px-4 lg:px-8 py-3.5 border-b border-slate-700/60">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">⚖️</span>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            LaborBargainLab
+            <span class="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">2026 美光罷工實戰</span>
+          </h1>
+          <p class="text-xs text-slate-400">四代理人沙盤推演 × 財務黑箱破解 × 勞動法理合規</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="https://github.com/clovermikelai/LaborBargainLab" target="_blank" class="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>GitHub Repo</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="max-w-7xl mx-auto w-full px-4 lg:px-8 mt-4">
+    <div class="flex space-x-2 border-b border-slate-700/80 pb-2">
+      <button onclick="switchTab('sim')" id="tab-btn-sim" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white transition">
+        <i data-lucide="bot" class="w-4 h-4"></i>
+        <span>🤖 4-LLM 談判沙盤推演</span>
+      </button>
+      <button onclick="switchTab('calc')" id="tab-btn-calc" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="calculator" class="w-4 h-4"></i>
+        <span>🧮 財務黑箱與五重陷阱算式</span>
+      </button>
+      <button onclick="switchTab('legal')" id="tab-btn-legal" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="scale" class="w-4 h-4"></i>
+        <span>📜 法律合規與越權密約診斷</span>
+      </button>
+      <button onclick="switchTab('db')" id="tab-btn-db" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="database" class="w-4 h-4"></i>
+        <span>📚 勞方反駁論證武器庫</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Areas -->
+  <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-6 flex-grow">
+
+    <!-- ==================== TAB 1: 4-LLM SIMULATION ==================== -->
+    <section id="tab-sim" class="space-y-6">
+      
+      <!-- Top Metrics Dashboard -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="glass-card p-4 rounded-xl">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
+            <span>當前協商緊繃度</span>
+            <i data-lucide="flame" class="w-4 h-4 text-red-400"></i>
+          </div>
+          <div class="text-2xl font-extrabold text-white" id="metric-tension">85 %</div>
+          <div class="text-[11px] text-red-400 mt-1 flex items-center gap-1 font-medium">▲ 高度緊繃對峙</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
+            <span>罷工爆發機率</span>
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div class="text-2xl font-extrabold text-white" id="metric-strike">95 %</div>
+          <div class="text-[11px] text-amber-400 mt-1 flex items-center gap-1 font-medium">99% 會員投票法定授權</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
+            <span>資方法規違法風險</span>
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
+          </div>
+          <div class="text-2xl font-extrabold text-white" id="metric-risk">90 / 100</div>
+          <div class="text-[11px] text-rose-400 mt-1 flex items-center gap-1 font-medium">涉不當勞動行為 (工會法35條)</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
+            <span>勞方訴求推進度</span>
+            <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="text-2xl font-extrabold text-white">4 大訴求鎖死</div>
+          <div class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium">分潤 / 83個月 / 禁搭便車 / 禁清算</div>
+        </div>
+      </div>
+
+      <!-- Control Bar -->
+      <div class="glass-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-slate-400">選擇回合焦點：</span>
+          <div class="flex space-x-1" id="round-selector">
+            <button onclick="setRound(1)" class="round-btn px-3 py-1 text-xs rounded font-medium bg-indigo-600 text-white" data-round="1">第 1 回合：四大訴求開場</button>
+            <button onclick="setRound(2)" class="round-btn px-3 py-1 text-xs rounded font-medium bg-slate-800 text-slate-300 hover:bg-slate-700" data-round="2">第 2 回合：五重公式大拆招</button>
+            <button onclick="setRound(3)" class="round-btn px-3 py-1 text-xs rounded font-medium bg-slate-800 text-slate-300 hover:bg-slate-700" data-round="3">第 3 回合：台中越權密約決裂</button>
+            <button onclick="setRound(4)" class="round-btn px-3 py-1 text-xs rounded font-medium bg-slate-800 text-slate-300 hover:bg-slate-700" data-round="4">第 4 回合：最後通牒與折衷</button>
+          </div>
+        </div>
+        <button onclick="simulateAutoRun()" id="auto-btn" class="flex items-center gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>一鍵全自動沙盤推演</span>
+        </button>
+      </div>
+
+      <!-- 4-Agent Debate Arena -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="debate-arena">
+        
+        <!-- Left: Labor vs Management -->
+        <div class="space-y-4">
+          <!-- Labor Box -->
+          <div class="glass-card p-5 rounded-xl bubble-labor">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/40">🔴 勞方談判代表 (桃園主戰 + 台中基層)</span>
+              <span class="text-xs text-slate-400">訴求：透明分潤 & 83個月基數</span>
+            </div>
+            <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-line" id="box-labor">載入中...</p>
+            <div class="mt-3 pt-3 border-t border-red-500/20 text-[11px] text-red-300 flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span id="labor-statutes">勞基法第29條、團約法第6條、團約法第13條</span>
+            </div>
+          </div>
+
+          <!-- Management Box -->
+          <div class="glass-card p-5 rounded-xl bubble-mgmt">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">🔵 美光資方首席代表 (人資法務)</span>
+              <span class="text-xs text-slate-400">抗辯：CAPEX 投資 & 全球政策</span>
+            </div>
+            <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-line" id="box-mgmt">載入中...</p>
+            <div class="mt-3 pt-3 border-t border-blue-500/20 text-[11px] text-blue-300 flex items-center gap-2">
+              <i data-lucide="info" class="w-3.5 h-3.5"></i>
+              <span id="mgmt-statutes">國際財務報導準則 (IFRS)、跨國總部薪酬規範</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Legal Advisor vs Mediator -->
+        <div class="space-y-4">
+          <!-- Legal Advisor Box -->
+          <div class="glass-card p-5 rounded-xl bubble-legal">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⚖️ 獨立法律顧問 (合規審查把關)</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-semibold" id="box-legal-status">審查亮燈中</span>
+            </div>
+            <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-line" id="box-legal">載入中...</p>
+            <div class="mt-3 pt-3 border-t border-amber-500/20 text-[11px] text-amber-300 flex items-center gap-2">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+              <span id="legal-statutes">團約法第8條、團約法第13條、工會法第35條</span>
+            </div>
+          </div>
+
+          <!-- Mediator Box -->
+          <div class="glass-card p-5 rounded-xl bubble-med">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">🟢 第三中立調解人 (公允斡旋)</span>
+              <span class="text-xs text-slate-400">評估：實質共識空間 (ZOPA)</span>
+            </div>
+            <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-line" id="box-med">載入中...</p>
+            <div class="mt-3 pt-3 border-t border-emerald-500/20 text-[11px] text-emerald-300 flex items-center gap-2">
+              <i data-lucide="git-merge" class="w-3.5 h-3.5"></i>
+              <span id="med-statutes">調解裁量建議與折衷方案</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: FINANCIAL TRAP CALCULATOR ==================== -->
+    <section id="tab-calc" class="space-y-6 hidden">
+      <div class="glass-card p-6 rounded-xl border border-slate-700">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <span>🧮</span>
+          資方『五重削弱公式』vs 勞方『15%稅後淨利分潤』實戰精算機
+        </h2>
+        <p class="text-sm text-slate-400 mt-1">
+          資方對外宣傳「年薪突破 200~600 萬」，但在底層公式中層層絞殺：先扣黑箱 CAPEX、打七折扣留 30%、再用 100 萬天花板定錨，且股票鎖定一年！
+        </p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
+          
+          <!-- Parameters Input Form -->
+          <div class="lg:col-span-5 space-y-4 bg-slate-900/60 p-5 rounded-xl border border-slate-800">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-2 flex items-center justify-between">
+              <span>⚙️ 模擬參數控制</span>
+              <button onclick="resetDefaults()" class="text-xs text-indigo-400 hover:underline">還原美光真實數值</button>
+            </h3>
+
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <label>當季稅後淨利 (新台幣 億元)</label>
+                <span class="font-bold text-white" id="val-profit">600 億</span>
+              </div>
+              <input type="range" min="100" max="1500" step="50" value="600" id="slider-profit" class="w-full accent-indigo-500" oninput="runFinancialCalc()">
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <label>下一季預估資本支出 CAPEX (新台幣 億元)</label>
+                <span class="font-bold text-amber-400" id="val-capex">500 億</span>
+              </div>
+              <input type="range" min="0" max="1200" step="25" value="500" id="slider-capex" class="w-full accent-amber-500" oninput="runFinancialCalc()">
+              <p class="text-[11px] text-slate-500 mt-1">* 若 CAPEX 大於淨利，資方公式獎金池將直接歸零！</p>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <label>資方扣留現金比例 (打七折 = 扣留 30%)</label>
+                <span class="font-bold text-rose-400" id="val-retention">30% 扣留 (打 7 折)</span>
+              </div>
+              <input type="range" min="0" max="50" step="5" value="30" id="slider-retention" class="w-full accent-rose-500" oninput="runFinancialCalc()">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">台灣適用總人數</label>
+                <input type="number" id="input-headcount" value="11000" class="w-full bg-slate-800 text-white text-xs px-2.5 py-1.5 rounded border border-slate-700" oninput="runFinancialCalc()">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">工會會員人數 (禁搭便車)</label>
+                <input type="number" id="input-members" value="4000" class="w-full bg-slate-800 text-white text-xs px-2.5 py-1.5 rounded border border-slate-700" oninput="runFinancialCalc()">
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">基層員工平均月薪 (元)</label>
+              <input type="number" id="input-wage" value="65000" class="w-full bg-slate-800 text-white text-xs px-2.5 py-1.5 rounded border border-slate-700" oninput="runFinancialCalc()">
+            </div>
+          </div>
+
+          <!-- Output Results & Visual Chart -->
+          <div class="lg:col-span-7 flex flex-col justify-between space-y-4">
+            
+            <!-- Result Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-blue-950/40 border border-blue-800/40 p-4 rounded-xl">
+                <div class="text-xs text-blue-400 font-semibold mb-1">🔵 資方方案：本季實拿現金</div>
+                <div class="text-2xl font-black text-white" id="res-mgmt-cash">0 元</div>
+                <div class="text-xs text-slate-400 mt-1" id="res-mgmt-months">約 0 個月薪水</div>
+                <div class="text-[11px] text-amber-300/80 mt-2 border-t border-blue-900/40 pt-2" id="res-mgmt-stock">+ 另有 50% 股票鎖一年 (離職全蒸發)</div>
+              </div>
+
+              <div class="bg-red-950/40 border border-red-800/40 p-4 rounded-xl">
+                <div class="text-xs text-red-400 font-semibold mb-1">🔴 勞方訴求：每季會員等同現金額</div>
+                <div class="text-2xl font-black text-emerald-400" id="res-labor-cash">0 元</div>
+                <div class="text-xs text-slate-400 mt-1" id="res-labor-months">約 0 個月薪水</div>
+                <div class="text-[11px] text-emerald-300 mt-2 border-t border-red-900/40 pt-2">全年等同約 83 個月實質回饋！</div>
+              </div>
+            </div>
+
+            <!-- Zero Alert Warning -->
+            <div id="zero-warning" class="hidden bg-rose-500/20 border border-rose-500/40 text-rose-300 p-3 rounded-lg text-xs flex items-center gap-2">
+              <i data-lucide="alert-octagon" class="w-5 h-5 flex-shrink-0"></i>
+              <span>🚨 <strong>致命警示</strong>：本季預估 CAPEX 吞噬或超過稅後獲利，資方公式獎金池直接「歸零」！員工辛勞數月實領 0 元！</span>
+            </div>
+
+            <!-- Chart Box -->
+            <div class="bg-slate-900/40 border border-slate-800 p-4 rounded-xl flex-grow flex flex-col">
+              <div class="text-xs text-slate-400 font-medium mb-3">單季發放金額對比 (新台幣 元)</div>
+              <div class="relative flex-grow" style="min-height: 200px;">
+                <canvas id="compChart"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: LEGAL AUDIT ==================== -->
+    <section id="tab-legal" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left: Taichung Pact Diagnosis -->
+        <div class="glass-card p-6 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="file-x" class="w-5 h-5 text-rose-400"></i>
+              台中 10/21 秘密協約適法性即時診斷
+            </h3>
+            <span class="px-2 py-0.5 rounded text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">違法無效風險 95 分</span>
+          </div>
+
+          <p class="text-xs text-slate-400 leading-relaxed">
+            台中 9 名協商代表於 10/21 提前私下與資方簽訂協議並附帶保密條款與 3 年和平條款。本系統依據台灣勞動四法出具司法判定：
+          </p>
+
+          <div class="mt-4 space-y-3">
+            <div class="bg-slate-900/60 border border-slate-800 p-3 rounded-lg">
+              <div class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                民法第 170 條 (無權代理) & 工會法第 26 條
+              </div>
+              <div class="text-xs text-slate-300 mt-1">
+                工會正式會議紀錄僅授權代表於「10/22 當天出席協商」，代表於 10/21 提前私簽已踰越代理權限，對全體工會成員自始不生效力。
+              </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 p-3 rounded-lg">
+              <div class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                團體協約法第 8 條第 1 項 (法定成立要件欠缺)
+              </div>
+              <div class="text-xs text-slate-300 mt-1">
+                法律明定團約簽訂須經「會員大會決議追認」。該協議未經大會決議，勞動部已定調為「一般性民法協議」，<strong>不具團體協約法之法定拘束力</strong>。
+              </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 p-3 rounded-lg">
+              <div class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                勞資爭議處理法第 53/54 條 (無法約束桃園合法罷工)
+              </div>
+              <div class="text-xs text-slate-300 mt-1">
+                因該協議非依法成立之團體協約，其和平義務條款無法阻礙桃園晶圓工會以 99% 高票取得之合法爭議權（罷工權）。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Legal Protections Audit -->
+        <div class="glass-card p-6 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-400"></i>
+              工會法定武器與不當勞動行為防禦
+            </h3>
+            <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">勞方完全適法</span>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <div class="bg-emerald-950/30 border border-emerald-800/40 p-3.5 rounded-lg">
+              <div class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                《團體協約法》第 13 條：禁搭便車完全具備明文法定依據！
+              </div>
+              <div class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                法律明文規定：「團體協約得約定，雇主不得將依本協約所約定之勞動條件，適用於非該工會會員之勞工。」資方若以「同仁不能有差別待遇」為由拒絕，在勞動法上屬於法盲說詞，工會可直接以法條迎頭痛擊！
+              </div>
+            </div>
+
+            <div class="bg-rose-950/30 border border-rose-800/40 p-3.5 rounded-lg">
+              <div class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+                《工會法》第 35 條：資方秋後算帳與分化屬於違法重罪！
+              </div>
+              <div class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                雇主若因勞工參加工會、罷工投票或執行罷工，施加解僱、降職、減薪、考核刁難或企圖分化兩廠，均屬違法不當勞動行為，勞動部裁決委員會可命令回復原狀並開罰！
+              </div>
+            </div>
+
+            <div class="bg-blue-950/30 border border-blue-800/40 p-3.5 rounded-lg">
+              <div class="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                <i data-lucide="help-circle" class="w-4 h-4"></i>
+                《團體協約法》第 6 條：資方拒開 CAPEX 細目即違反誠信協商！
+              </div>
+              <div class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                資方既主張分潤需扣除資本支出，依法律義務就必須向工會提供查核所需之具體財務資料；若以「商業機密」拒絕提供，法律上視為無正當理由拒絕協商。
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: REBUTTALS DB ==================== -->
+    <section id="db-tab" class="space-y-6 hidden">
+      <div class="glass-card p-6 rounded-xl border border-slate-700">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span>📚</span>
+            勞方反駁論證資料庫 (Negotiation Talking Points)
+          </h2>
+          <span class="text-xs text-slate-400">已收錄 4 組核心戰役攻防卡</span>
+        </div>
+        <p class="text-xs text-slate-400 mb-6">點擊複製一擊必殺話術，提供工會談判幹部在談判桌上直接調用辯駁：</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="cards-container">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="glass-card border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500">
+    LaborBargainLab © 2026. Designed for Collective Bargaining Empowerment and Labor Game Theory Research.  
+    GitHub: <a href="https://github.com/clovermikelai/LaborBargainLab" class="text-indigo-400 hover:underline">clovermikelai/LaborBargainLab</a>
+  </footer>
+
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      ['sim', 'calc', 'legal', 'db'].forEach(id => {
+        const el = document.getElementById(id === 'db' ? 'db-tab' : 'tab-' + id);
+        const btn = document.getElementById('tab-btn-' + id);
+        if (id === tabId) {
+          el.classList.remove('hidden');
+          btn.classList.add('bg-indigo-600', 'text-white');
+          btn.classList.remove('text-slate-400');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('bg-indigo-600', 'text-white');
+          btn.classList.add('text-slate-400');
+        }
+      });
+      lucide.createIcons();
+    }
+
+    // Simulation Data Store
+    const simulationRounds = {
+      1: {
+        tension: 80,
+        strike: 88,
+        risk: 65,
+        labor: "【勞方開場陳述與四大法定訴求提出】\n\n資方代表好。2026財年受惠於AI浪潮與全球HBM高頻寬記憶體需求暴增，美光創下了歷史天價的獲利！\n這每一分利潤，是我們現場無數工程師與技術員承受高壓輪班與高稼動率換來的。\n2023年低潮時公司突襲資遣裁員；如今大賺卻企圖用微薄紅包打發。\n\n工會正式提出四大嚴正訴求：\n一、改革獎金制度：廢除黑箱IPP，比照台積電/同業明訂固定分潤公式並每季發放；\n二、2026財年歷史獲利一次性補發：依稅後淨利15%提撥（約83個月基數），限會員享有；\n三、全面禁止秋後算帳（工會法第35條）；\n四、落實禁搭便車（團約法第13條）！\n桃園廠已以99%高票取得合法罷工權，我們隨時準備戰鬥！",
+        mgmt: "【資方開場陳述與立場宣示】\n\n工會代表好。公司已主動發放每人100萬現金感謝獎金，在全台灣科技業是極罕見的實質肯定。\n但半導體是高資本支出景氣循環行業，沒有公司過去數百億投資HBM與先進封測，不可能有今天果實！\n\n工會提出的『83個月分潤』脫離產業常態與財務現實。如果全部分掉，下季拿什麼買機台對抗三星與海力士？且全球政策一致，不能打破制度。我們呼籲工會理性對話，切勿發動罷工。",
+        legal: "【法律顧問合規備忘錄：程序與標的審查】\n\n1. 勞方罷工程序【綠燈（完全合法）】：桃園工會依法踐行勞資爭議處理法第53條調解及第54條全體無記名投票，以99%取得合法罷工權，受憲法最高度保障。\n2. 勞方15%稅後分潤訴求【黃燈（適法談判標的）】：依勞基法第29條，公司盈餘負有法定給付義務，屬於合法爭議事項。\n3. 資方商業機密抗辯【黃燈警告】：若一味以總部政策消極排斥協商，恐違反團約法第6條誠信協商義務。",
+        med: "【第三中立方調解人評述：確立實質協商議程】\n\n桃園工會取得99%罷工授權，代表基層對制度化分潤渴望達到頂點，83個月成功定錨獲利與待遇落差。\n資方不能以一次性100萬要求工會放棄長期訴求，亦不能消除裁員恐懼。調解人裁定下一回合焦點聚焦於：分潤計算公式是否透明、是否排除黑箱操弄！"
+      },
+      2: {
+        tension: 92,
+        strike: 95,
+        risk: 90,
+        labor: "【勞方精準拆解資方『五重削弱公式』與公關謊言】\n\n資方宣傳媒體公關稿吹噓『產線年薪破200萬、工程師近600萬』，但你們騙不了每天看機台的員工！\n\n來看看你們這套新分潤算式：\n第一、淨利先扣除『下一季預估CAPEX』。半導體設備動輒數百億，高層只要編列擴建，分潤母數直接歸零，員工實領0元！\n第二、扣完竟然還要『打七折』扣留30%預期外現金？這根本是重複抽頭三成！\n第三、拿2026一次性100萬做為比例天花板定錨，獲利再翻倍也分不到！\n第四、50%股票鎖一年？美光隨時可能再來突襲裁員，未滿一年股票全數充公，這根本是『金手銬賣身契』！\n台積電分潤會因為今年要買EUV就把員工分潤扣成0嗎？請收回這份羞辱勞工的黑箱方案！",
+        mgmt: "【資方提出全面升級方案並辯護分潤公式】\n\n工會對於公式完全是誤解！\n公司已展現歷史級誠意：自2027財年起實施季度分潤（50%現金+50%股票），讓同仁成為股東共享股價上漲；資本支出CAPEX是為了保住大家的飯碗，扣除CAPEX與提列30%應急金是穩健大廠必備風控；個人考績上限提高至500%（5倍），日班輪班津貼調高3倍至4,500元，夜班保證12,000元，勞退提撥直接拉高到10%！產線年薪上看200萬、工程師400~600萬，已是全台頂規！",
+        legal: "【法律顧問合規備忘錄：分潤算式與誠信協商審查】\n\n1. 分潤扣除CAPEX之查核權【重大紅燈（涉違反誠信協商）】：依團約法第6條第3項，拒絕提供協商必要資料視為無正當理由拒絕協商。資方若要扣CAPEX，必須公開具體採購明細核算依據！列為黑箱使獎金池隨意歸零構成欺罔性協商。\n2. 扣留30%現金款【黃燈】：缺乏客觀指引支持，勞方要求剔除合情合理。\n3. 股票鎖一年【黃燈】：若未明訂非自願離職全數折現，依民法第247-1條屬顯失公平條款。",
+        med: "【第三中立方調解人評述：破除財務數字迷宮】\n\n資方CAPEX扣除與打七折在邏輯上顯然站不住腳。半導體設備投資是常態，若扣除額由公司主觀決定，員工確實隨時分潤變0元！\n調解人提出折衷方案：A.資方取消打七折扣留30%；B.母數改以會計師簽證營業利益固定比例計算，不得扣除預估CAPEX；C.股票附加非自願離職全額兌現保障。"
+      },
+      3: {
+        tension: 96,
+        strike: 99,
+        risk: 95,
+        labor: "【勞方強烈譴責台中10/21越權密約，堅守團約法第8條與第13條】\n\n資方不用再拿10/21台中那份協議當擋箭牌！工會代表正式授權會議紀錄白紙黑字寫得很清楚：9名代表僅被授權『於10/22當天出席協商』！\n這9人竟在10/21提前私下簽訂密約，還簽署保密條款連會員都看不到！\n\n依《團體協約法》第8條第1項，未經會員大會決議追認，法律上根本不具備團體協約法定效力！民法上屬於無權代理！台中會員目前已展開連署撤銷。\n更何況你們企圖用不設禁搭便車瓦解工會，直接違反團約法第13條立法精神。桃園工會是獨立法人，99%投票通過罷工權，休想靠分化瓦解團結！",
+        mgmt: "【資方以台中簽署協議為由要求桃園跟進並撤回罷工】\n\n提醒工會：台中廠企業工會已於10/21達成歷史性和解，並由工會代表正式簽字，協議包含三年和平義務，代表台中廠高度認可薪酬升級方案。\n美光在台灣是一個整體，若桃園搞禁搭便車是在同仁間製造對立！公司絕不同意差別待遇。桃園若執意發動罷工將重創全球客戶供應鏈信賴，造成營運虧損！我們敦促桃園代表回歸台中方案。",
+        legal: "【法律顧問重大警示：台中10/21協議無權代理鑑定】\n\n1. 台中協議在法律上【不具團體協約效力（紅燈警示）】：依團約法第8條及民法第170條，9名代表提前於10/21私簽屬無權代理！勞動部已定調為一般民事協議，和平條款對桃園完全不生效力，台中會員亦有權大會否決撤銷。\n2. 禁搭便車【綠燈（完全受法律授權）】：團約法第13條明文保障工會約定不適用非會員，資方以不能差別待遇拒絕屬於重大法盲。\n3. 秋後算帳【重度紅燈】：任何對幹部之懲戒立即構成工會法第35條不當勞動行為！",
+        med: "【第三中立方調解人評述：剔除台中密約干擾】\n\n台中私簽秘密協議未經會員大會決議，在法律上無法約束桃園合法罷工權。資方以此逼退工會只會加劇分化怒火。\n調解人支持將『禁搭便車』納入實質協商，享有差別待遇是保障承擔風險會員之基石。資方應於11/6前停止宣傳無效密約，提出具備禁搭便車之正式修正案！"
+      },
+      4: {
+        tension: 85,
+        strike: 70,
+        risk: 50,
+        labor: "【勞方最終防線與最後通牒】\n\n我們的底線非常明確：\n1. 分潤公式必須比照同業，以營業利益固定百分比提撥，剔除『扣除預估CAPEX』與『打七折扣留30%』之欺罔條款；\n2. 2026財年超額暴利必須實質補償；\n3. 禁搭便車（團約法第13條）與禁止秋後算帳（工會法第35條）必須白紙黑字列入正式團約，並經全體會員大會表決！\n若資方繼續以公關稿與分化拖延，桃園廠將依法發動全面無限期罷工！",
+        mgmt: "【資方妥協試探與最後陳述】\n\n公司理解工會對現金即時性的關切。在不破壞全球總部CAPEX原則下，我們願意研議：\n1. 研擬縮短股票歸屬鎖定期，並提高現金配比；\n2. 針對2026財年，探討在原有100萬基礎上增設激勵加碼機制；\n但前提是工會必須簽署和平協議保障產線，並接受台中廠的統一規範！",
+        legal: "【法律顧問最終結案鑑定】\n\n總結法律底線：桃園工會罷工權完全合法；任何有效終局協議必須符合：A.公式具查核透明度不得黑箱扣CAPEX（團約法第6條）；B.納入法定禁搭便車（團約法第13條）；C.明訂禁止秋後算帳罰則（工會法第35條）；D.送交工會全體會員大會決議追認（團約法第8條）。",
+        med: "【第三中立方調解人結案總結】\n\n本次推演證明：科技業勞資談判已是『數據、法理與組織實力』的精密對決！美光化解罷工風暴的唯一生路就是：捨棄會計黑箱、承認工會民主程序、落實法定禁搭便車與禁止秋後算帳。"
+      }
+    };
+
+    function setRound(r) {
+      document.querySelectorAll('.round-btn').forEach(btn => {
+        if (parseInt(btn.getAttribute('data-round')) === r) {
+          btn.className = "round-btn px-3 py-1 text-xs rounded font-medium bg-indigo-600 text-white";
+        } else {
+          btn.className = "round-btn px-3 py-1 text-xs rounded font-medium bg-slate-800 text-slate-300 hover:bg-slate-700";
+        }
+      });
+
+      const d = simulationRounds[r];
+      document.getElementById('metric-tension').innerText = d.tension + ' %';
+      document.getElementById('metric-strike').innerText = d.strike + ' %';
+      document.getElementById('metric-risk').innerText = d.risk + ' / 100';
+
+      document.getElementById('box-labor').innerText = d.labor;
+      document.getElementById('box-mgmt').innerText = d.mgmt;
+      document.getElementById('box-legal').innerText = d.legal;
+      document.getElementById('box-med').innerText = d.med;
+    }
+
+    let autoTimer = null;
+    function simulateAutoRun() {
+      let cur = 1;
+      setRound(cur);
+      const btn = document.getElementById('auto-btn');
+      btn.innerHTML = `<span class="animate-spin mr-1">⏳</span> 自動推演中...`;
+      if (autoTimer) clearInterval(autoTimer);
+      autoTimer = setInterval(() => {
+        cur++;
+        if (cur > 4) {
+          clearInterval(autoTimer);
+          btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>推演完成！</span>`;
+          lucide.createIcons();
+          return;
+        }
+        setRound(cur);
+      }, 3000);
+    }
+
+    // Financial Calculation Logic
+    let compChartInstance = null;
+    function runFinancialCalc() {
+      const profit = parseFloat(document.getElementById('slider-profit').value);
+      const capex = parseFloat(document.getElementById('slider-capex').value);
+      const retRate = parseFloat(document.getElementById('slider-retention').value) / 100.0;
+      const headcount = parseInt(document.getElementById('input-headcount').value) || 11000;
+      const members = parseInt(document.getElementById('input-members').value) || 4000;
+      const wage = parseFloat(document.getElementById('input-wage').value) || 65000;
+
+      document.getElementById('val-profit').innerText = profit + ' 億';
+      document.getElementById('val-capex').innerText = capex + ' 億';
+      document.getElementById('val-retention').innerText = (retRate * 100).toFixed(0) + '% 扣留 (打 ' + ((1 - retRate) * 10).toFixed(0) + ' 折)';
+
+      // Management Calculation
+      const netAfterCapex = (profit - capex) * 1e8;
+      const zeroAlert = document.getElementById('zero-warning');
+      let mgmtPerCapitaCash = 0;
+      let mgmtPerCapitaStock = 0;
+
+      if (netAfterCapex <= 0) {
+        zeroAlert.classList.remove('hidden');
+        document.getElementById('res-mgmt-cash').innerText = '0 元 (黑箱歸零)';
+        document.getElementById('res-mgmt-months').innerText = '實收 0 個月薪水';
+      } else {
+        zeroAlert.classList.add('hidden');
+        const discounted = netAfterCapex * (1 - retRate);
+        const capped = Math.min(discounted, 1000000 * headcount / 4.0);
+        const perCapitaTotal = capped / headcount;
+        mgmtPerCapitaCash = perCapitaTotal * 0.5;
+        mgmtPerCapitaStock = perCapitaTotal * 0.5;
+
+        document.getElementById('res-mgmt-cash').innerText = Math.round(mgmtPerCapitaCash).toLocaleString() + ' 元';
+        document.getElementById('res-mgmt-months').innerText = '約 ' + (mgmtPerCapitaCash / wage).toFixed(1) + ' 個月薪水';
+      }
+
+      // Labor Calculation (15% Net Profit annual / 4 quarters, closed shop)
+      const annualPool = profit * 4 * 1e8 * 0.15;
+      const laborPerCapitaQuarter = (annualPool / members) / 4.0;
+      document.getElementById('res-labor-cash').innerText = Math.round(laborPerCapitaQuarter).toLocaleString() + ' 元';
+      document.getElementById('res-labor-months').innerText = '約 ' + (laborPerCapitaQuarter / wage).toFixed(1) + ' 個月 (單季等同)';
+
+      // Update Chart
+      updateChart(mgmtPerCapitaCash, mgmtPerCapitaStock, laborPerCapitaQuarter);
+    }
+
+    function updateChart(mgmtCash, mgmtStock, laborQuarter) {
+      const ctx = document.getElementById('compChart').getContext('2d');
+      const data = {
+        labels: ['資方本季實領現金', '資方鎖一年股票', '勞方訴求分潤 (單季會員)'],
+        datasets: [{
+          label: '發放金額 (NT$)',
+          data: [mgmtCash, mgmtStock, laborQuarter],
+          backgroundColor: [
+            'rgba(59, 130, 246, 0.7)',
+            'rgba(245, 158, 11, 0.7)',
+            'rgba(16, 185, 129, 0.8)'
+          ],
+          borderColor: [
+            '#3b82f6',
+            '#f59e0b',
+            '#10b981'
+          ],
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      };
+
+      if (compChartInstance) {
+        compChartInstance.data = data;
+        compChartInstance.update();
+      } else {
+        compChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { color: '#94a3b8' }
+              },
+              x: {
+                grid: { display: false },
+                ticks: { color: '#e2e8f0' }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+
+    function resetDefaults() {
+      document.getElementById('slider-profit').value = 600;
+      document.getElementById('slider-capex').value = 500;
+      document.getElementById('slider-retention').value = 30;
+      document.getElementById('input-headcount').value = 11000;
+      document.getElementById('input-members').value = 4000;
+      document.getElementById('input-wage').value = 65000;
+      runFinancialCalc();
+    }
+
+    // Render Rebuttal Cards
+    const rebuttals = [
+      {
+        cat: "分潤公式與會計黑箱",
+        fallacy: "要求分潤母數先扣除下一季預估資本支出 (CAPEX)，若有盈餘再打七折，股票鎖定一年。",
+        counter: "半導體設備投資動輒數百億且預估值由高層自行決定，隨意編列即可將利潤扣成0；既已預扣未來CAPEX又打七折是重複抽頭；股票鎖一年一旦裁員全數充公，形同金手銬。",
+        quote: "台積電的分潤會因為今年要買EUV就把員工分潤扣成0嗎？不可驗證的黑箱算式就是假分潤、真詐欺！",
+        statute: "團體協約法第6條第3項 (誠信協商義務)、民法第247-1條 (顯失公平)",
+        score: "9.8"
+      },
+      {
+        cat: "公關話術與年薪膨脹",
+        fallacy: "透過媒體公關宣稱全面升級方案讓『產線年薪破200萬、工程師近600萬』，試圖塑造勞方貪婪形象。",
+        counter: "新聞稿附帶小字註明不保證底薪、不保證現金，且灌入未實現股票、退休金提撥與極端最高考績等第5倍，是用少數親信極限值欺騙公眾輿論。",
+        quote: "拿虛胖的公關假設數字帶風向，掩蓋基層輪班高稼動率與2026財年超額暴利完全不補發的實情。",
+        statute: "勞動基準法第29條 (盈餘分配法定權益)",
+        score: "9.4"
+      },
+      {
+        cat: "程序違法與無權代理",
+        fallacy: "資方主張台中廠9名代表已於10/21簽署協議並附帶三年和平條款，要求桃園廠跟進並撤回罷工。",
+        counter: "工會代表受託權限僅限於10/22當天協商，提前私簽屬於民法第170條之無權代理；未經全體會員大會追認，依《團體協約法》第8條在法律上不具團約效力，勞動部亦定調為一般協議，無法約束桃園合法罷工權。",
+        quote: "無權代理與保密黑箱協議對全體會員自始不生效力！資方企圖以違法分化協議架空合法爭議權已涉嫌不當勞動行為。",
+        statute: "團體協約法第8條、工會法第26/32條、民法第170條",
+        score: "9.9"
+      },
+      {
+        cat: "工會保護與禁搭便車",
+        fallacy: "資方宣稱同仁都是一家人，公司政策不能差別待遇，反對禁搭便車條款。",
+        counter: "《團體協約法》第13條明文保障工會得約定『雇主不得將勞動條件適用於非會員』，唯有禁搭便車才能維護工會團結權與付出會費會員的公平性，資方企圖雨露均霑意在瓦解工會組織。",
+        quote: "拒絕禁搭便車是資方慣用的去工會化手段！團約法第13條是法律明文賦予工會的法定權利。",
+        statute: "團體協約法第13條、工會法第35條",
+        score: "9.6"
+      }
+    ];
+
+    function renderRebuttals() {
+      const container = document.getElementById('cards-container');
+      container.innerHTML = rebuttals.map(r => `
+        <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">🛡️ ${r.cat}</span>
+              <span class="text-xs text-amber-400 font-bold">殺傷力：${r.score} / 10</span>
+            </div>
+            <div class="text-xs text-slate-400 mb-2">
+              <strong class="text-rose-400">資方話術：</strong> ${r.fallacy}
+            </div>
+            <div class="text-xs text-slate-200 mb-3 leading-relaxed">
+              <strong class="text-emerald-400">勞方反擊：</strong> ${r.counter}
+            </div>
+          </div>
+          <div>
+            <div class="bg-slate-950 p-2.5 rounded border border-slate-800 text-xs text-amber-300 font-mono mb-2 flex items-center justify-between">
+              <span>"${r.quote}"</span>
+              <button onclick="navigator.clipboard.writeText('${r.quote}'); alert('已複製反駁金句至剪貼簿！')" class="text-slate-400 hover:text-white ml-2"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+            </div>
+            <div class="text-[11px] text-slate-500">法律依據：${r.statute}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Initialize on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setRound(1);
+      runFinancialCalc();
+      renderRebuttals();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
